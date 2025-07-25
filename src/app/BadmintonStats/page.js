@@ -1,88 +1,34 @@
 "use client"
-import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
-import { Trophy, Target, Zap, Award } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { Trophy, Zap, Award } from 'lucide-react';
+import BadmintonExportCsv from '../BadmintonExportCsv/page';
 
-const BadmintonStats = () => {
-  // Données simulées pour un match de badminton
-  const [matchData] = useState({
-    player1: {
-      name: "Joueur A",
-      totalPoints: 21,
-      pointsByZone: [
-        { zone: "Zone 1 (avant-gauche)", points: 4, direct: 2, faute: 1, maladresse: 1, chance: 0 },
-        { zone: "Zone 2 (avant-centre)", points: 3, direct: 2, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 3 (avant-droite)", points: 2, direct: 1, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 4 (milieu-gauche)", points: 5, direct: 3, faute: 2, maladresse: 0, chance: 0 },
-        { zone: "Zone 5 (milieu-centre)", points: 3, direct: 2, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 6 (milieu-droite)", points: 4, direct: 2, faute: 1, maladresse: 1, chance: 0 }
-      ],
-      pointTypes: [
-        { type: "Points directs", count: 12, percentage: 57.1 },
-        { type: "Fautes provoquées", count: 7, percentage: 33.3 },
-        { type: "Maladresses adverses", count: 2, percentage: 9.5 },
-        { type: "Coups de chance", count: 0, percentage: 0 }
-      ],
-      strokes: [
-        { type: "Amorti", count: 8, points: 4 },
-        { type: "Smash", count: 12, points: 4 },
-        { type: "Drive", count: 10, points: 5 },
-        { type: "Dégagé", count: 6, points: 3 },
-        { type: "Coup gagnant", count: 4, points: 2 },
-        { type: "Autres", count: 8, points: 3 }
-      ],
-      badges: {
-        bronze: 4,
-        silver: 2,
-        gold: 1,
-        smash: 2
-      }
-    },
-    player2: {
-      name: "Joueur B",
-      totalPoints: 18,
-      pointsByZone: [
-        { zone: "Zone 1 (avant-gauche)", points: 3, direct: 1, faute: 1, maladresse: 1, chance: 0 },
-        { zone: "Zone 2 (avant-centre)", points: 2, direct: 1, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 3 (avant-droite)", points: 3, direct: 2, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 4 (milieu-gauche)", points: 4, direct: 2, faute: 1, maladresse: 1, chance: 0 },
-        { zone: "Zone 5 (milieu-centre)", points: 4, direct: 3, faute: 1, maladresse: 0, chance: 0 },
-        { zone: "Zone 6 (milieu-droite)", points: 2, direct: 1, faute: 1, maladresse: 0, chance: 0 }
-      ],
-      pointTypes: [
-        { type: "Points directs", count: 10, percentage: 55.6 },
-        { type: "Fautes provoquées", count: 6, percentage: 33.3 },
-        { type: "Maladresses adverses", count: 2, percentage: 11.1 },
-        { type: "Coups de chance", count: 0, percentage: 0 }
-      ],
-      strokes: [
-        { type: "Amorti", count: 6, points: 4 },
-        { type: "Smash", count: 15, points: 2 },
-        { type: "Drive", count: 8, points: 4 },
-        { type: "Dégagé", count: 6, points: 3 },
-        { type: "Coup gagnant", count: 4, points: 2 },
-        { type: "Autres", count: 10, points: 3 }
-      ],
-      badges: {
-        bronze: 3,
-        silver: 1,
-        gold: 0,
-        smash: 1
-      }
-    }
-  });
-
+function BadmintonStats() {
+  const [matchData, setMatchData] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState('player1');
-  const currentPlayer = matchData[selectedPlayer];
 
-  const COLORS = {
+  useEffect(() => {
+    fetch("/api/badminton-stats")
+      .then((res) => res.json())
+      .then((data) => {
+        setMatchData(data);
+      })
+      .catch((err) => console.error("Erreur API :", err));
+  }, []);
+
+  if (!matchData) return <div>Chargement des statistiques...</div>;
+
+  const currentPlayer = matchData?.[selectedPlayer];
+
+  const colors = {
     direct: '#ef4444',
     faute: '#f97316',
     maladresse: '#eab308',
-    chance: '#ffffff'
+    chance: '#3b82f6'
   };
 
-  const pieColors = ['#3b82f6', '#ef4444', '#f97316', '#eab308'];
+  const pieColors = [colors.chance, colors.direct, colors.faute, colors.maladresse];
 
   const BadgeCard = ({ type, count, icon: Icon, color }) => (
     <div className={`${color} rounded-lg p-4 text-white shadow-lg`}>
@@ -97,6 +43,8 @@ const BadmintonStats = () => {
   );
 
   const CourtVisualization = () => {
+    if (!currentPlayer || !currentPlayer.pointsByZone) return null;
+
     const zoneColors = currentPlayer.pointsByZone.map(zone => {
       const intensity = Math.min(zone.points / 6, 1);
       return `rgba(59, 130, 246, ${0.2 + intensity * 0.6})`;
@@ -141,7 +89,8 @@ const BadmintonStats = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-6">
+      {matchData ? (
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
@@ -158,7 +107,7 @@ const BadmintonStats = () => {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {matchData.player1.name} ({matchData.player1.totalPoints})
+              {matchData.player1?.name} ({matchData.player1?.totalPoints})
             </button>
             <button
               onClick={() => setSelectedPlayer('player2')}
@@ -168,7 +117,7 @@ const BadmintonStats = () => {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {matchData.player2.name} ({matchData.player2.totalPoints})
+              {matchData.player2?.name} ({matchData.player2?.totalPoints})
             </button>
           </div>
 
@@ -176,25 +125,25 @@ const BadmintonStats = () => {
           <div className="grid grid-cols-4 gap-4 mb-8">
             <BadgeCard 
               type="Badges Bronze" 
-              count={currentPlayer.badges.bronze} 
+              count={currentPlayer.badges?.bronze} 
               icon={Award} 
               color="bg-amber-600" 
             />
             <BadgeCard 
               type="Badges Argent" 
-              count={currentPlayer.badges.silver} 
+              count={currentPlayer.badges?.silver} 
               icon={Award} 
               color="bg-gray-500" 
             />
             <BadgeCard 
               type="Badges Or" 
-              count={currentPlayer.badges.gold} 
+              count={currentPlayer.badges?.gold} 
               icon={Trophy} 
               color="bg-yellow-500" 
             />
             <BadgeCard 
               type="Badges Smash" 
-              count={currentPlayer.badges.smash} 
+              count={currentPlayer.badges?.smash} 
               icon={Zap} 
               color="bg-purple-600" 
             />
@@ -279,42 +228,42 @@ const BadmintonStats = () => {
               <RadarChart data={[
                 {
                   metric: 'Points directs',
-                  joueurA: matchData.player1.pointTypes[0].count,
-                  joueurB: matchData.player2.pointTypes[0].count,
+                  joueurA: matchData.player1?.pointTypes?.[0]?.count ?? 0,
+                  joueurB: matchData.player2?.pointTypes?.[0]?.count ?? 0,
                 },
                 {
                   metric: 'Fautes provoquées',
-                  joueurA: matchData.player1.pointTypes[1].count,
-                  joueurB: matchData.player2.pointTypes[1].count,
+                  joueurA: matchData.player1?.pointTypes?.[1]?.count ?? 0,
+                  joueurB: matchData.player2?.pointTypes?.[1]?.count ?? 0,
                 },
                 {
                   metric: 'Badges Or',
-                  joueurA: matchData.player1.badges.gold * 3,
-                  joueurB: matchData.player2.badges.gold * 3,
+                  joueurA: matchData.player1?.badges?.gold * 3,
+                  joueurB: matchData.player2?.badges?.gold * 3,
                 },
                 {
                   metric: 'Badges Smash',
-                  joueurA: matchData.player1.badges.smash * 2,
-                  joueurB: matchData.player2.badges.smash * 2,
+                  joueurA: matchData.player1?.badges?.smash * 2,
+                  joueurB: matchData.player2?.badges?.smash * 2,
                 },
                 {
                   metric: 'Variété frappes',
-                  joueurA: matchData.player1.strokes.length,
-                  joueurB: matchData.player2.strokes.length,
+                  joueurA: matchData.player1?.strokes?.length,
+                  joueurB: matchData.player2?.strokes?.length,
                 }
               ]}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="metric" />
                 <PolarRadiusAxis />
                 <Radar
-                  name={matchData.player1.name}
+                  name={matchData.player1?.name}
                   dataKey="joueurA"
                   stroke="#3b82f6"
                   fill="#3b82f6"
                   fillOpacity={0.2}
                 />
                 <Radar
-                  name={matchData.player2.name}
+                  name={matchData.player2?.name}
                   dataKey="joueurB"
                   stroke="#ef4444"
                   fill="#ef4444"
@@ -330,34 +279,37 @@ const BadmintonStats = () => {
                 <div className="flex justify-between">
                   <span>Score final:</span>
                   <span className="font-semibold">
-                    {matchData.player1.totalPoints} - {matchData.player2.totalPoints}
+                    {matchData.player1?.totalPoints} - {matchData.player2?.totalPoints}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Vainqueur:</span>
                   <span className="font-semibold text-blue-600">
-                    {matchData.player1.totalPoints > matchData.player2.totalPoints 
-                      ? matchData.player1.name 
-                      : matchData.player2.name}
+                    {matchData.player1?.totalPoints > matchData.player2?.totalPoints 
+                      ? matchData.player1?.name 
+                      : matchData.player2?.name}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total badges or:</span>
                   <span className="font-semibold">
-                    {matchData.player1.badges.gold + matchData.player2.badges.gold}
+                    {matchData.player1?.badges?.gold + matchData.player2?.badges?.gold}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total smashs:</span>
                   <span className="font-semibold">
-                    {matchData.player1.badges.smash + matchData.player2.badges.smash}
+                    {matchData.player1?.badges?.smash + matchData.player2?.badges?.smash}
                   </span>
                 </div>
+                <BadmintonExportCsv matchData={matchData}/>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div>) : (
+      <div>Pas de données...</div>
+    )}
     </div>
   );
 };
