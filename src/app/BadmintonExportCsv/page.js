@@ -13,8 +13,6 @@ function BadmintonExportCsv({matchData}) {
         }));
     };
 
-    console.log(Object.values(matchData))
-
     const [data] = useState(formatDataCSV(matchData));
 
     const convertInCSV = (data) => {
